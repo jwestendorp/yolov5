@@ -9,5 +9,5 @@ client = SimpleUDPClient(ip, port)  # Create client
 # Send message with int, float and string
 # client.send_message("/some/address", [1, 2., "hello"])
 
-
-client.send_message("/some/address", [0.91, 0.99, 1, 12])
+# x,y,w,h
+client.send_message("/some/address", [10, 20, 250, 250])
