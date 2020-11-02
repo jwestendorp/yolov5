@@ -202,6 +202,7 @@ if __name__ == '__main__':
     parser.add_argument('--update', action='store_true',
                         help='update all models')
     opt = parser.parse_args()
+    print(opt)
 
     # async def start_server():
     #     web.run_app(app)
