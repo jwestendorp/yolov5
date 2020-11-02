@@ -2,19 +2,12 @@ import argparse
 import os
 import shutil
 import time
-import eventlet
-import socketio
-import asyncio
-from aiohttp import web
 from pathlib import Path
-from multiprocessing import Process
-import threading
-import nest_asyncio
+
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
-
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
@@ -24,36 +17,9 @@ from utils.general import (
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 from pythonosc.udp_client import SimpleUDPClient
-# ip = "127.0.0.1"
-ip = "0.0.0.0"
+ip = "127.0.0.1"
 port = 1337
 client = SimpleUDPClient(ip, port)  # Create client
-
-
-# sio = socketio.AsyncServer()
-# app = web.Application()
-# sio.attach(app)
-
-
-# async def index(request):
-#     """Serve the client-side application."""
-
-#     with open('server/index.html') as f:
-#         return web.Response(text=f.read(), content_type='text/html')
-
-
-# @sio.event
-# def connect(sid, environ):
-#     print("connect ", sid)
-
-
-# @sio.event
-# def disconnect(sid):
-#     print('disconnect ', sid)
-
-
-# app.router.add_static('/static', 'server')
-# app.router.add_get('/', index)
 
 
 def detect(save_img=False):
@@ -61,6 +27,7 @@ def detect(save_img=False):
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source.isnumeric() or source.startswith(
         ('rtsp://', 'rtmp://', 'http://')) or source.endswith('.txt')
+
     # Initialize
     set_logging()
     device = select_device(opt.device)
@@ -102,7 +69,6 @@ def detect(save_img=False):
     t0 = time.time()
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     # run once
-    ########
     _ = model(img.half() if half else img) if device.type != 'cpu' else None
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
@@ -174,7 +140,6 @@ def detect(save_img=False):
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str,
                         default='yolov5s.pt', help='model.pt path(s)')
@@ -208,37 +173,10 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     print(opt)
 
-    # async def start_server():
-    #     web.run_app(app)
-
-    def start_model():
-        with torch.no_grad():
-            # update all models (to fix SourceChangeWarning)
-            if opt.update:
-                for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
-                    detect()
-                    strip_optimizer(opt.weights)
-
-            else:
+    with torch.no_grad():
+        if opt.update:  # update all models (to fix SourceChangeWarning)
+            for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
                 detect()
-
-    start_model()
-
-    # async def main():
-
-    #     loop = asyncio.get_running_loop()
-
-    #     task = loop.create_task(start_server())
-    #     # task2 = loop.create_task(start_server)
-
-    #     # thread = threading.Thread(target=start_server)
-    #     # thread2 = threading.Thread(target=start_model)
-    #     # thread.start()
-    #     # thread2.start()
-    #     # Schedule three calls *concurrently*:
-    #     # await asyncio.gather(
-    #     #     start_model(),
-    #     #     start_server(),
-    #     # )
-
-    # asyncio.run(main())
+                strip_optimizer(opt.weights)
+        else:
+            detect()
