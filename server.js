@@ -13,8 +13,11 @@ var osc = new Server(1337, "0.0.0.0");
 //   console.log("OSC Server is listening.");
 // });
 
-osc.on("bird", (msg) => {
-  console.log(`Message: ${msg}`);
+osc.on("/bird", (msg) => {
+  let [_, x, y, w, h] = msg;
+  console.log(x, y, w, h);
+
+  io.emit("bird", [x, y, w, h]);
 });
 
 // client.send("/hello", "world", (err) => {
