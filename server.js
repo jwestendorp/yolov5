@@ -14,10 +14,10 @@ var osc = new Server(1337, "0.0.0.0");
 // });
 
 osc.on("/bird", (msg) => {
-  let [_, x, y, w, h] = msg;
-  console.log(x, y, w, h);
+  let [_, x, y, w, h, conf] = msg;
+  console.log(x, y, w, h, conf);
 
-  io.emit("bird", [x, y, w, h]);
+  io.emit("bird", [x, y, w, h, conf]);
 });
 
 // client.send("/hello", "world", (err) => {

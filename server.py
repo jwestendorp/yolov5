@@ -153,8 +153,10 @@ def detect(save_img=False):
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)
                                           ) / gn).view(-1).tolist()  # normalized xywh
 
-                        print(xywh)
-                        client.send_message("/bird", xywh)
+                        print([xywh, conf.tolist()])
+                        # client.send_message(
+                        #     "/bird", xywh.append(conf.tolist()))
+                        client.send_message("/bird", xywh + [conf.tolist()])
 
                         if save_img or view_img:  # Add bbox to image
                             label = '%s %.2f' % (names[int(cls)], conf)
