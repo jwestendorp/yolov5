@@ -7,6 +7,10 @@ from pathlib import Path
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
+import paho.mqtt.client as mqtt
+import json
+import time
+
 from numpy import random
 
 from models.experimental import attempt_load
@@ -16,13 +20,25 @@ from utils.general import (
     xyxy2xywh, plot_one_box, strip_optimizer, set_logging)
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
-from pythonosc.udp_client import SimpleUDPClient
-ip = "127.0.0.1"
-port = 1337
-client = SimpleUDPClient(ip, port)  # Create client
+client = mqtt.Client("jonaslappy")
+client.username_pw_set("80af5a0a", "548b12d6693ed913")
+client.connect("broker.shiftr.io", 1883)
+
+
+class detection:
+
+    def __init__(self, x, y, width, height, conf):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.conf = conf
 
 
 def detect(save_img=False):
+
+    frameCount = 0
+
     out, source, weights, view_img, save_txt, imgsz = \
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source.isnumeric() or source.startswith(
@@ -107,6 +123,8 @@ def detect(save_img=False):
 
                 if birds is not None and len(birds):
 
+                    detections = []
+
                     # print(len(birds), 'birds', birds)
                     # print(len(det), 'det', det)
 
@@ -119,19 +137,35 @@ def detect(save_img=False):
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)
                                           ) / gn).view(-1).tolist()  # normalized xywh
 
-                        print(xywh)
-                        client.send_message("/bird", xywh)
+                        detections.append(
+                            detection(xywh[0], xywh[1], xywh[2], xywh[3], conf.item()))
+
+                        # print(xywh)
 
                         if save_img or view_img:  # Add bbox to image
                             label = '%s %.2f' % (names[int(cls)], conf)
                             plot_one_box(xyxy, im0, label=label,
                                          color=colors[int(cls)], line_thickness=3)
 
+                    if frameCount % 30 == 0:
+
+                        json_string = json.dumps(
+                            [ob.__dict__ for ob in detections])
+                        print(json_string)
+                        payload = json.dumps(
+                            json_string
+                        )
+                        res = client.publish(
+                            "birdBoundingBox/birdBoundingBox", payload)
+                        print(json_string)
+
                 # Stream results
                 if view_img:
                     cv2.imshow(p, im0)
                     if cv2.waitKey(1) == ord('q'):  # q to quit
                         raise StopIteration
+
+            frameCount = frameCount + 1
 
     if save_txt or save_img:
         print('Results saved to %s' % Path(out))
